@@ -8,8 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Level;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jgrapht.Graphs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -24,6 +27,9 @@ import edu.tamu.cse.lenss.edgeKeeper.utils.EKUtils;
 import edu.tamu.cse.lenss.edgeKeeper.utils.EKUtils.NetworkInterfaceType;
 
 public class EdgeStatus {
+	
+	public static final Logger logger = LoggerFactory.getLogger(EdgeStatus.class);
+	
 	enum ReplicaStatus{
 		FORMED,
 		LOOKING,
@@ -46,7 +52,7 @@ public class EdgeStatus {
 		
 		try {
 			if (!selfMaster()) {
-				CoordinatorClient.logger.error("EdgeStatus reset function is called. Current node is not acting as master.");
+				logger.error("EdgeStatus reset function is called. Current node is not acting as master.");
 				return false;
 			}
 
@@ -77,7 +83,7 @@ public class EdgeStatus {
 			
 			String suitableMasterIP = getSuitableMasterIP(graph);
 			if(suitableMasterIP==null) {
-				CoordinatorClient.logger.fatal("The master node does not contain a suitable IP for replica. "
+				logger.error("The master node does not contain a suitable IP for replica. "
 						+ "Can not build EdgeKeeper. Own IP map: "+graph.ownNode.ipMaps);
 				return false;
 			}
@@ -96,12 +102,12 @@ public class EdgeStatus {
 			for(String guid:replicaMap.keySet()) {
 				TopoNode node = graph.getVertexByGuid(guid);
 				if(node == null) {
-					CoordinatorClient.logger.log(Level.INFO, "Replica "+guid+" left the network. Deleting it from replica map");
+					logger.info("Replica "+guid+" left the network. Deleting it from replica map");
 					this.replicaMap.remove(guid);
 				} 
 				else {
 					if(! node.ipMaps.containsKey(this.replicaMap.get(guid))){
-						CoordinatorClient.logger.info("IP address for replica "+ guid+ " changed.");
+						logger.info("IP address for replica "+ guid+ " changed.");
 						
 						String suitableIP = this.getSuitableReplicaIP(graph, node, suitableMasterIP);
 						if(suitableIP==null || suitableIP.isEmpty()) {
@@ -110,11 +116,11 @@ public class EdgeStatus {
 						}
 						else {
 							this.replicaMap.put(guid, suitableIP);
-							CoordinatorClient.logger.debug(" For replica "+guid+" associating new IP "+suitableIP);
+							logger.debug(" For replica "+guid+" associating new IP "+suitableIP);
 						}
 					}
 					else {
-						CoordinatorClient.logger.log(Level.ALL, "IP address for replica "+ guid+ " remained same");
+						logger.trace("IP address for replica "+ guid+ " remained same");
 					}
 				}
 			}
@@ -133,12 +139,12 @@ public class EdgeStatus {
 						EKUtils.logger.info("Adding new replica "+client.guid +" for ip "+suitableIP);
 					}
 					else {
-						CoordinatorClient.logger.debug("Node"+client.guid +" does not have suitable IP ");
+						logger.debug("Node"+client.guid +" does not have suitable IP ");
 					}
 				}
 			}
 			
-			CoordinatorClient.logger.log(Level.ALL, "replica map size="+replicaMap.size()+" no of replica needed ="+noReplica);
+			logger.trace( "replica map size="+replicaMap.size()+" no of replica needed ="+noReplica);
 			if(replicaMap.size() >= (noReplica+1)/2) {
 				this.replicaStatus = ReplicaStatus.FORMED;
 			}
@@ -148,22 +154,22 @@ public class EdgeStatus {
 			}
 			
 		} catch(Exception e) {
-			EKUtils.logger.fatal("Exception occured resetting edgeStatus ", e);
+			EKUtils.logger.error("Exception occured resetting edgeStatus ", e);
 		} 
 		
 		if(oldReplicaMap.equals(this.replicaMap)) {
-			CoordinatorClient.logger.log(Level.ALL,"The replica status remained same after reset");
+			logger.trace("The replica status remained same after reset");
 			return false;
 		}
 		else {
-			CoordinatorClient.logger.log(Level.ALL,"The replica status remained same after reset");
+			logger.trace("The replica status remained same after reset");
 			return true;
 		}
 	}
 
 //	String getSuitableIP(TopoNode node) {
 //		if(node.ipMaps==null || node.ipMaps.isEmpty()) {
-//			CoordinatorClient.logger.debug("IPs for node is empty. "+node.guid);
+//			logger.debug("IPs for node is empty. "+node.guid);
 //			return null;
 //		}
 //		for(String ip: node.ipMaps.keySet()) {
@@ -179,7 +185,7 @@ public class EdgeStatus {
 	Set<String> getSuitableIPSet(TopoNode node) {
 		Set<String> ipSet = new HashSet<>();
 		if(node.ipMaps==null || node.ipMaps.isEmpty()) {
-			CoordinatorClient.logger.debug("IPs for node is empty. "+node.guid);
+			logger.debug("IPs for node is empty. "+node.guid);
 		}
 		else {
 			for(String ip: node.ipMaps.keySet()) {
@@ -212,7 +218,7 @@ public class EdgeStatus {
 						}
 				}
 			}
-			CoordinatorClient.logger.debug("IPs "+ip+" connected with "+ipConnected +" clients");
+			logger.debug("IPs "+ip+" connected with "+ipConnected +" clients");
 			if(ipConnected>maxConnectivity) {
 				maxConnectivity=ipConnected;
 				ipMaxConnected = ip;

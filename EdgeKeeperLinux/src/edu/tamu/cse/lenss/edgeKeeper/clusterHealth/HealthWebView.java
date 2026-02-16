@@ -22,14 +22,17 @@ import java.util.Set;
 
 import javax.imageio.ImageIO;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 
 import edu.tamu.cse.lenss.edgeKeeper.client.EKClient;
+import edu.tamu.cse.lenss.edgeKeeper.client.EdgeKeeperAPI;
 import edu.tamu.cse.lenss.edgeKeeper.server.EKHandler;
 import edu.tamu.cse.lenss.edgeKeeper.server.RequestTranslator;
 import edu.tamu.cse.lenss.edgeKeeper.topology.TopoUtils;
@@ -40,7 +43,8 @@ import edu.tamu.cse.lenss.edgeKeeper.utils.EKUtilsDesktop;
 import edu.tamu.cse.lenss.edgeKeeper.utils.Terminable;
 
 public class HealthWebView extends NanoHTTPD implements Terminable{
-	static final Logger logger = Logger.getLogger(HealthWebView.class);
+	static final Logger logger = LoggerFactory.getLogger(HealthWebView.class);
+	public static EdgeKeeperAPI mEKClient = new EKClient();
 	
 	public HealthWebView() {
         super(EKConstants.HEALTH_VIEW_PORT);
@@ -57,10 +61,10 @@ public class HealthWebView extends NanoHTTPD implements Terminable{
         StringBuilder sb = new StringBuilder();
         putHeader(sb);
         
-        JSONObject edgeStatus = EKClient.getEdgeStatus();
+        JSONObject edgeStatus = mEKClient.getEdgeStatus();
         
         try {
-        	logger.log(Level.ALL, "Obtained Edge Health= "+edgeStatus.toString( ));
+        	logger.trace( "Obtained Edge Health= "+edgeStatus.toString( ));
         	
 			JSONObject devStatus = edgeStatus.getJSONObject(RequestTranslator.deviceStatus);
 			buildTable(sb, "Device Status", devStatus);
@@ -255,7 +259,7 @@ public class HealthWebView extends NanoHTTPD implements Terminable{
 		try {
 			this.start();
 		} catch (IOException e) {
-			logger.fatal("Could not start the Webserver ", e);
+			logger.error("Could not start the Webserver ", e);
 		}
 	}
 }

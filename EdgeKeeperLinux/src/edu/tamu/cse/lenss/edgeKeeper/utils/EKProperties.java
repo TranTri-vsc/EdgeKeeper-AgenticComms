@@ -6,7 +6,8 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Properties;
 
-import org.apache.log4j.Level;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EKProperties extends Properties{
 
@@ -95,7 +96,7 @@ public class EKProperties extends Properties{
 	 * @throws IllegalAccessException
 	 */
 	public boolean validate() throws IllegalArgumentException, IllegalAccessException {
-		EKUtils.logger.log(Level.ALL, "Validating all properties:");
+		EKUtils.logger.trace("Validating all properties:");
 		for(Field f:  EKProperties.class.getDeclaredFields()) {
 			String key;
 			key = (String) f.get(this);
